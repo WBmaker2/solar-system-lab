@@ -1,0 +1,44 @@
+{
+  "missions": [
+    {
+      "id": "full-moon",
+      "title": "보름달 날짜 맞추기",
+      "prompt": "시간 슬라이더를 움직여 달이 보름달(조명율 98% 이상)이 되는 날짜를 찾으세요.",
+      "hint": "삭(신월)로부터 약 15일 뒤를 찾아보세요. 달 위상 뷰어의 조명율을 확인하세요.",
+      "check": { "type": "illumination", "min": 0.98 },
+      "points": 20
+    },
+    {
+      "id": "new-moon",
+      "title": "삭(신월) 날짜 맞추기",
+      "prompt": "달이 완전히 가려지는 삭(조명율 2% 이하)이 되는 날짜를 찾으세요.",
+      "hint": "보름달로부터 약 14~15일 전후를 찾아보세요.",
+      "check": { "type": "illumination", "max": 0.02 },
+      "points": 20
+    },
+    {
+      "id": "summer-solstice",
+      "title": "하지 찾기",
+      "prompt": "서울의 낮 길이가 가장 긴 날(하지, 6월 21일 근처)을 찾으세요.",
+      "hint": "계절 그래프에서 서울(37.6°)의 낮 길이가 가장 길어지는 날을 보세요.",
+      "check": { "type": "date", "month": 6, "day": 21, "toleranceDays": 3 },
+      "points": 20
+    },
+    {
+      "id": "winter-solstice",
+      "title": "동지 찾기",
+      "prompt": "서울의 낮 길이가 가장 짧은 날(동지, 12월 22일 근처)을 찾으세요.",
+      "hint": "12월로 이동해 낮 길이가 가장 짧아지는 날을 찾으세요.",
+      "check": { "type": "date", "month": 12, "day": 22, "toleranceDays": 3 },
+      "points": 20
+    },
+    {
+      "id": "eclipse-window",
+      "title": "일식·월식 가능 구간 찾기",
+      "prompt": "일식 또는 월식 가능 구간(하이라이트 표시)이 뜨는 날짜를 찾으세요.",
+      "hint": "삭·망 근처에서 달 궤도가 황도면과 만나는 때를 노려보세요. 예측 목록의 날짜로 이동해 보세요.",
+      "check": { "type": "eclipse" },
+      "points": 20
+    }
+  ]
+}
