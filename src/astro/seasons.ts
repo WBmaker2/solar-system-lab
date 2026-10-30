@@ -4,15 +4,15 @@ import { deg2rad, rad2deg } from './julian';
 export const SEOUL_LAT = 37.56;
 
 /** Solar declination (deg) from the Sun's apparent ecliptic longitude. */
-export function solarDeclination(jd: number): number {
+export function solarDeclination(jd: number, obliquity: number = OBLIQUITY_DEG): number {
   const lambda = deg2rad(sunTrueGeocentricLongitude(jd));
-  const eps = deg2rad(OBLIQUITY_DEG);
+  const eps = deg2rad(obliquity);
   return rad2deg(Math.asin(Math.sin(eps) * Math.sin(lambda)));
 }
 
 /** Solar-noon altitude (deg) at a given latitude. */
-export function solarNoonAltitude(jd: number, latitudeDeg: number): number {
-  const delta = solarDeclination(jd);
+export function solarNoonAltitude(jd: number, latitudeDeg: number, obliquity: number = OBLIQUITY_DEG): number {
+  const delta = solarDeclination(jd, obliquity);
   return 90 - Math.abs(latitudeDeg - delta);
 }
 
@@ -20,9 +20,9 @@ export function solarNoonAltitude(jd: number, latitudeDeg: number): number {
  * Day length in hours at latitude (includes standard -0.833° refraction/semi-diameter correction).
  * Returns clamped 0–24 (polar day/night).
  */
-export function dayLengthHours(jd: number, latitudeDeg: number): number {
+export function dayLengthHours(jd: number, latitudeDeg: number, obliquity: number = OBLIQUITY_DEG): number {
   const lat = deg2rad(latitudeDeg);
-  const dec = deg2rad(solarDeclination(jd));
+  const dec = deg2rad(solarDeclination(jd, obliquity));
   const h0 = -0.01454; // sin(-0.833°)
   const cosH = (h0 - Math.sin(lat) * Math.sin(dec)) / (Math.cos(lat) * Math.cos(dec));
   if (cosH <= -1) return 24;
@@ -57,6 +57,10 @@ export function seasonNameNorthern(jd: number, date: Date): string {
 }
 
 /** Day-length table across latitudes for the graph (F4). */
-export function dayLengthTable(jd: number, latitudes = [-60, -30, 0, 20, 37.6, 60]): Array<{ lat: number; hours: number }> {
-  return latitudes.map((lat) => ({ lat, hours: dayLengthHours(jd, lat) }));
+export function dayLengthTable(
+  jd: number,
+  latitudes = [-60, -30, 0, 20, 37.6, 60],
+  obliquity: number = OBLIQUITY_DEG,
+): Array<{ lat: number; hours: number }> {
+  return latitudes.map((lat) => ({ lat, hours: dayLengthHours(jd, lat, obliquity) }));
 }
