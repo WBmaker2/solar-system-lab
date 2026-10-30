@@ -9,6 +9,13 @@ test('home loads full lab UI', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /일식·월식 예측/ })).toBeVisible();
 });
 
+test('3D scene initializes without the WebGL fallback', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#scene')).toBeVisible();
+  await expect(page.locator('.label-layer .body-label').first()).toBeVisible();
+  await expect(page.getByText('2D 정보 패널만 표시')).toHaveCount(0);
+});
+
 test('play/pause toggles simulation', async ({ page }) => {
   await page.goto('/');
   const play = page.getByRole('button', { name: /재생하기|정지하기/ });

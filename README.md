@@ -28,7 +28,9 @@ npm run preview
 | `npm run build` | 타입 검사 후 정적 빌드 |
 | `npm run verify` | 타입검사 + 린트 + 단위테스트 + 빌드 |
 | `npm test` | Vitest 단위 테스트 |
-| `npm run test:e2e` | Playwright E2E 테스트 |
+| `npm run test:e2e` | Playwright E2E 테스트 (Chromium + WebKit/Safari 엔진) |
 | `npm run icons` | PWA 아이콘 재생성 |
+
+> E2E를 처음 실행하면 브라우저가 필요합니다: `npx playwright install chromium webkit`
 
 자세한 학습 설계는 [`구현계획.md`](구현계획.md), 변경 기록은 [`docs/UPDATELOG.md`](docs/UPDATELOG.md) 참고.

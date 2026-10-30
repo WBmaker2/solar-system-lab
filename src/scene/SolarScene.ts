@@ -111,10 +111,10 @@ export class SolarScene {
   private orbitLines: THREE.LineLoop[] = [];
   private labelLayer: HTMLDivElement;
   private labelEls = new Map<string, HTMLDivElement>();
-  private clock = new THREE.Clock();
   private disposed = false;
   private resizeObs: ResizeObserver;
   private lastAngleReport = 0;
+  private lastFrameTime = 0;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -136,6 +136,10 @@ export class SolarScene {
     this.controls.minDistance = 2;
 
     this.scene.background = new THREE.Color('#05080f');
+    this.labelLayer = document.createElement('div');
+    this.labelLayer.className = 'label-layer';
+    this.labelLayer.setAttribute('aria-hidden', 'true');
+    container.appendChild(this.labelLayer);
     this.buildLights();
     this.buildStars();
     this.buildSun();
@@ -143,11 +147,6 @@ export class SolarScene {
     this.buildEarthTerminator();
     this.buildMoon();
     this.buildOrbitLines();
-
-    this.labelLayer = document.createElement('div');
-    this.labelLayer.className = 'label-layer';
-    this.labelLayer.setAttribute('aria-hidden', 'true');
-    container.appendChild(this.labelLayer);
     this.buildLabels();
 
     this.resizeObs = new ResizeObserver(() => this.resize());
@@ -418,14 +417,15 @@ export class SolarScene {
 
   private frame(): void {
     if (this.disposed) return;
-    const dt = Math.min(this.clock.getDelta(), 0.1);
+    const now = performance.now();
+    const dt = this.lastFrameTime === 0 ? 0.016 : Math.min((now - this.lastFrameTime) / 1000, 0.1);
+    this.lastFrameTime = now;
     this.time.tick(dt);
     const jd = this.time.get().jd;
     this.updatePositions(jd);
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
     this.updateLabels();
-    const now = performance.now();
     if (now - this.lastAngleReport > 500) {
       this.lastAngleReport = now;
       this.cb.onEarthAngle?.((jd % 1) * 360);
