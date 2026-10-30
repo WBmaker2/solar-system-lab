@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EARTH, PLANETS, heliocentricScene, moonRelativeScene, type PlanetDef } from '../astro/orbits';
 import type { TimeStore } from '../stores/timeStore';
 import type { ViewState, ViewStore } from '../stores/viewStore';
+import type { ModelStore } from '../stores/modelStore';
 
 export interface SceneCallbacks {
   onSelect?: (id: string | null) => void;
@@ -122,6 +123,7 @@ export class SolarScene {
     private time: TimeStore,
     private view: ViewStore,
     private cb: SceneCallbacks = {},
+    model?: ModelStore,
   ) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -148,6 +150,8 @@ export class SolarScene {
     this.buildMoon();
     this.buildOrbitLines();
     this.buildLabels();
+    this.applyObliquity(model?.get().obliquityDeg ?? 23.4393);
+    model?.subscribe((m) => this.applyObliquity(m.obliquityDeg));
 
     this.resizeObs = new ResizeObserver(() => this.resize());
     this.resizeObs.observe(container);
@@ -226,7 +230,7 @@ export class SolarScene {
   }
 
   private buildEarthTerminator(): void {
-    this.earthGroup.rotation.z = THREE.MathUtils.degToRad(23.4393);
+    this.applyObliquity(23.4393);
     this.earthMaterial = new THREE.ShaderMaterial({
       uniforms: {
         sunDirection: { value: new THREE.Vector3(1, 0, 0) },
@@ -329,6 +333,10 @@ export class SolarScene {
   setEclipseHighlight(solar: boolean, lunar: boolean): void {
     const color = solar ? '#ffb62e' : lunar ? '#ff6d6d' : '#5f7191';
     (this.moonOrbitLine.material as THREE.LineBasicMaterial).color.set(color);
+  }
+
+  private applyObliquity(deg: number): void {
+    this.earthGroup.rotation.z = THREE.MathUtils.degToRad(deg);
   }
 
   private applyView(v: ViewState): void {
