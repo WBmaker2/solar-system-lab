@@ -37,6 +37,7 @@ export class App {
       </header>
       <nav class="mobile-tabs" aria-label="화면 전환">
         <button type="button" data-tab="scene" class="active" aria-pressed="true">장면</button>
+        <button type="button" data-tab="lab" aria-pressed="false">관측·분석</button>
         <button type="button" data-tab="panels" aria-pressed="false">시간·정보</button>
         <button type="button" data-tab="quiz" aria-pressed="false">퀴즈</button>
       </nav>
@@ -59,11 +60,13 @@ export class App {
           <p id="eclipse-badge" class="badge stage-badge" hidden></p>
           <p class="model-note">개념 모형: 원형 궤도 근사 · 크기·거리 과장됨 · 천문 계산은 수업용 근사식</p>
         </section>
+        <section class="lab-row" aria-label="관측과 분석">
+          <div id="ui-graphs"></div>
+          <div id="ui-observer"></div>
+        </section>
         <aside class="panel" aria-label="조작 패널">
           <div id="ui-time"></div>
           <div id="ui-info"></div>
-          <div id="ui-graphs"></div>
-          <div id="ui-observer"></div>
           <div id="ui-eclipse"></div>
         </aside>
         <section class="quiz-wrap" aria-label="퀴즈">
