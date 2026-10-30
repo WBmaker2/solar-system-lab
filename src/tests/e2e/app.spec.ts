@@ -62,6 +62,19 @@ test('observer sky diagram renders', async ({ page }) => {
   await expect(page.locator('.graph-svg')).toBeVisible();
 });
 
+test('tilt slider changes seasonal contrast', async ({ page }) => {
+  await page.goto('/');
+  const noon = page.locator('#gr-noon');
+  const before = await noon.textContent();
+  await page.locator('#tilt-slider').fill('0');
+  await expect(page.locator('#gr-tilt-val')).toContainText('0');
+  await expect(page.locator('#ic-tilt')).toContainText('0.0°');
+  const after = await noon.textContent();
+  expect(before).not.toBe(after);
+  // Reset for other tests (fresh context per test, but keep UI tidy).
+  await page.locator('[data-tilt="23.4"]').click();
+});
+
 test('observer button does not move the page scroll', async ({ page }) => {
   await page.goto('/');
   const before = await page.evaluate(() => window.scrollY);

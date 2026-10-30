@@ -1,5 +1,6 @@
 import { eclipseStatus } from '../astro/eclipses';
 import { SolarScene } from '../scene/SolarScene';
+import { ModelStore } from '../stores/modelStore';
 import { TimeStore } from '../stores/timeStore';
 import { ViewStore, type ViewMode } from '../stores/viewStore';
 import { EclipsePanel } from '../ui/EclipsePanel';
@@ -19,6 +20,7 @@ const VIEW_LABELS: Array<{ id: ViewMode; ko: string }> = [
 export class App {
   private time = new TimeStore();
   private view = new ViewStore();
+  private model = new ModelStore();
   private scene: SolarScene | null = null;
 
   constructor(private root: HTMLElement) {
@@ -74,7 +76,7 @@ export class App {
     try {
       this.scene = new SolarScene(canvas, wrap, this.time, this.view, {
         onSelect: () => undefined,
-      });
+      }, this.model);
     } catch (err) {
       // Headless / no-WebGL environments: keep every panel functional.
       console.warn('3D 장면을 초기화하지 못했습니다. 2D 패널은 정상 동작합니다.', err);
@@ -88,9 +90,9 @@ export class App {
     };
     // Panels self-subscribe to stores (stores hold the listeners alive).
     new TimePanel(q('#ui-time'), this.time);
-    new InfoCard(q('#ui-info'), this.time, this.view);
-    new Graphs(q('#ui-graphs'), this.time);
-    new ObserverPanel(q('#ui-observer'), this.time);
+    new InfoCard(q('#ui-info'), this.time, this.view, this.model);
+    new Graphs(q('#ui-graphs'), this.time, this.model);
+    new ObserverPanel(q('#ui-observer'), this.time, this.model);
     new EclipsePanel(q('#ui-eclipse'), this.time);
     new QuizPanel(q('#ui-quiz'), this.time);
     this.time.subscribe((s) => this.onTime(s.jd));

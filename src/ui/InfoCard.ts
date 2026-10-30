@@ -6,6 +6,7 @@ import { SEOUL_LAT, dayLengthHours, seasonNameNorthern, solarDeclination, solarN
 import { formatDateUTC } from '../astro/julian';
 import type { TimeStore } from '../stores/timeStore';
 import type { ViewState, ViewStore } from '../stores/viewStore';
+import type { ModelStore } from '../stores/modelStore';
 
 interface Fact { id: string; title: string; body: string }
 const FACTS: Fact[] = (factsData as { facts: Fact[] }).facts;
@@ -13,13 +14,16 @@ const FACTS: Fact[] = (factsData as { facts: Fact[] }).facts;
 export class InfoCard {
   private unsubTime: (() => void) | null = null;
   private unsubView: (() => void) | null = null;
+  private unsubModel: (() => void) | null = null;
   private factIndex = 0;
   private lastJd = 0;
+  private obliquity = 23.4393;
 
   constructor(
     private root: HTMLElement,
     private time: TimeStore,
     private view: ViewStore,
+    model?: ModelStore,
   ) {
     root.innerHTML = `
       <section aria-labelledby="info-heading" class="card" aria-live="polite">
@@ -28,6 +32,7 @@ export class InfoCard {
         <dl class="facts-list">
           <div><dt>선택 천체</dt><dd id="ic-body">—</dd></div>
           <div><dt>계절 (북반구)</dt><dd id="ic-season">—</dd></div>
+          <div><dt>자전축 기울기</dt><dd id="ic-tilt">—</dd></div>
           <div><dt>태양 적위</dt><dd id="ic-dec">—</dd></div>
           <div><dt>서울 낮 길이</dt><dd id="ic-daylen">—</dd></div>
           <div><dt>달 위상</dt><dd id="ic-moon">—</dd></div>
@@ -48,6 +53,10 @@ export class InfoCard {
     });
     this.unsubTime = this.time.subscribe((s) => this.render(s.jd));
     this.unsubView = this.view.subscribe((v) => this.renderBody(v));
+    this.unsubModel = model?.subscribe((m) => {
+      this.obliquity = m.obliquityDeg;
+      this.render(this.lastJd || this.time.get().jd);
+    }) ?? null;
   }
 
   private renderFact(): void {
@@ -67,19 +76,21 @@ export class InfoCard {
   }
 
   private render(jd: number): void {
+    if (!jd) return;
     this.lastJd = jd;
     const date = new Date((jd - 2440587.5) * 86_400_000);
     const phase = moonPhase(jd);
     const st = eclipseStatus(jd);
-    const dec = solarDeclination(jd);
-    const dayLen = dayLengthHours(jd, SEOUL_LAT);
-    const noon = solarNoonAltitude(jd, SEOUL_LAT);
+    const dec = solarDeclination(jd, this.obliquity);
+    const dayLen = dayLengthHours(jd, SEOUL_LAT, this.obliquity);
+    const noon = solarNoonAltitude(jd, SEOUL_LAT, this.obliquity);
     const { riseH, setH } = moonRiseSetApproximate(jd);
     const season = seasonNameNorthern(jd, date);
 
     this.root.querySelector('#ic-summary')!.textContent =
       `${formatDateUTC(date)} · ${season} · 서울 낮 ${dayLen.toFixed(1)}시간 · ${phase.emoji} ${phase.nameKo} ${(phase.illumination * 100).toFixed(1)}%`;
     this.root.querySelector('#ic-season')!.textContent = `${season} (정오 태양 고도 ${noon.toFixed(1)}°)`;
+    this.root.querySelector('#ic-tilt')!.textContent = `${this.obliquity.toFixed(1)}°${Math.abs(this.obliquity - 23.4393) < 0.05 ? ' (지금 지구와 같음)' : ''}`;
     this.root.querySelector('#ic-dec')!.textContent = `${dec >= 0 ? '+' : ''}${dec.toFixed(2)}°`;
     this.root.querySelector('#ic-daylen')!.textContent = `${dayLen.toFixed(2)}시간 (서울 위도 ${SEOUL_LAT}°)`;
     this.root.querySelector('#ic-moon')!.textContent = `${phase.emoji} ${phase.nameKo} · 조명율 ${(phase.illumination * 100).toFixed(1)}% · 나이 ${phase.age.toFixed(1)}일`;
@@ -102,5 +113,6 @@ export class InfoCard {
   destroy(): void {
     this.unsubTime?.();
     this.unsubView?.();
+    this.unsubModel?.();
   }
 }

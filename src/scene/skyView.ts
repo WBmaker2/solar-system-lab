@@ -1,4 +1,5 @@
 import { formatHour, moonPhase, moonRiseSetApproximate } from '../astro/phases';
+import { OBLIQUITY_DEG } from '../astro/orbits';
 import { SEOUL_LAT, dayLengthHours, solarDeclination, solarNoonAltitude } from '../astro/seasons';
 
 /**
@@ -14,11 +15,16 @@ export interface SkyBody {
   setH: number;
 }
 
-export function sunAltitudeAt(hour: number, jd: number, lat = SEOUL_LAT): { altitude: number; azimuth: number; riseH: number; setH: number } {
-  const day = Math.max(dayLengthHours(jd, lat), 0.5);
+export function sunAltitudeAt(
+  hour: number,
+  jd: number,
+  lat = SEOUL_LAT,
+  obliquity: number = OBLIQUITY_DEG,
+): { altitude: number; azimuth: number; riseH: number; setH: number } {
+  const day = Math.max(dayLengthHours(jd, lat, obliquity), 0.5);
   const riseH = 12 - day / 2;
   const setH = 12 + day / 2;
-  const maxAlt = solarNoonAltitude(jd, lat);
+  const maxAlt = solarNoonAltitude(jd, lat, obliquity);
   if (hour < riseH || hour > setH) {
     const frac = hour < riseH ? (hour + 24 - setH) / (24 - day) : (hour - setH) / (24 - day);
     return { altitude: -12 * Math.sin(Math.PI * Math.min(Math.max(frac, 0), 1)), azimuth: hour < 12 ? 60 : 300, riseH, setH };
@@ -27,9 +33,14 @@ export function sunAltitudeAt(hour: number, jd: number, lat = SEOUL_LAT): { alti
   return { altitude: Math.max(0, maxAlt * Math.sin(Math.PI * frac)), azimuth: 90 + 180 * frac, riseH, setH };
 }
 
-export function moonAltitudeAt(hour: number, jd: number, lat = SEOUL_LAT): { altitude: number; riseH: number; setH: number } {
+export function moonAltitudeAt(
+  hour: number,
+  jd: number,
+  lat = SEOUL_LAT,
+  obliquity: number = OBLIQUITY_DEG,
+): { altitude: number; riseH: number; setH: number } {
   const { riseH, setH } = moonRiseSetApproximate(jd);
-  const dec = -solarDeclination(jd) * Math.cos((moonPhase(jd).phaseAngle * Math.PI) / 180);
+  const dec = -solarDeclination(jd, obliquity) * Math.cos((moonPhase(jd).phaseAngle * Math.PI) / 180);
   const maxAlt = Math.max(5, 90 - Math.abs(lat - dec));
   const span = (setH - riseH + 24) % 24;
   const rel = (hour - riseH + 24) % 24;
@@ -51,16 +62,16 @@ function arcPath(cx: number, cy: number, r: number, altFn: (frac: number) => num
   return pts.join(' ');
 }
 
-export function renderSkySVG(jd: number, date: Date, lat = SEOUL_LAT): string {
+export function renderSkySVG(jd: number, date: Date, lat = SEOUL_LAT, obliquity: number = OBLIQUITY_DEG): string {
   const hour = date.getUTCHours() + 9; // KST display; model uses local solar approx
   const h = ((hour % 24) + 24) % 24;
-  const sun = sunAltitudeAt(h, jd, lat);
-  const moon = moonAltitudeAt(h, jd, lat);
+  const sun = sunAltitudeAt(h, jd, lat, obliquity);
+  const moon = moonAltitudeAt(h, jd, lat, obliquity);
   const phase = moonPhase(jd);
   const W = 520, H = 300, cx = 260, cy = 250, r = 200;
-  const dayLen = Math.max(dayLengthHours(jd, lat), 0.5);
-  const sunMax = solarNoonAltitude(jd, lat);
-  const moonMax = 90 - Math.abs(lat + solarDeclination(jd) * 0.9);
+  const dayLen = Math.max(dayLengthHours(jd, lat, obliquity), 0.5);
+  const sunMax = solarNoonAltitude(jd, lat, obliquity);
+  const moonMax = 90 - Math.abs(lat + solarDeclination(jd, obliquity) * 0.9);
 
   const sunPath = arcPath(cx, cy, r, (f) => sunMax * Math.sin(Math.PI * f), sunMax);
   const moonPath = arcPath(cx, cy, r * 0.78, (f) => moonMax * Math.sin(Math.PI * f), Math.max(moonMax, 1));
