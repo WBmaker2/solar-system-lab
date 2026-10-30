@@ -62,6 +62,15 @@ test('observer sky diagram renders', async ({ page }) => {
   await expect(page.locator('.graph-svg')).toBeVisible();
 });
 
+test('observer button does not move the page scroll', async ({ page }) => {
+  await page.goto('/');
+  const before = await page.evaluate(() => window.scrollY);
+  await page.getByRole('button', { name: '관측자', exact: true }).click();
+  await page.waitForTimeout(600);
+  expect(await page.evaluate(() => window.scrollY)).toBe(before);
+  await expect(page.locator('#ui-observer .card')).toHaveClass(/highlight|card/);
+});
+
 test('no console errors or page errors on load and interaction', async ({ page }) => {
   const errors: string[] = [];
   page.on('console', (msg) => {

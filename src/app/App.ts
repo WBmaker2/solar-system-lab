@@ -104,7 +104,8 @@ export class App {
         const mode = b.dataset.view as ViewMode;
         if (mode === 'observer') {
           this.view.patch({ mode, followEarth: true });
-          this.root.querySelector('#ui-observer')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          // NOTE: intentionally no scrollIntoView here — keep the user's
+          // viewport stable and only flash the observer card in place.
           this.root.querySelector('#ui-observer .card')?.classList.add('highlight');
           window.setTimeout(() => this.root.querySelector('#ui-observer .card')?.classList.remove('highlight'), 2400);
         } else {
