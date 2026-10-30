@@ -1,6 +1,7 @@
 import { eclipseStatus } from '../astro/eclipses';
 import { SolarScene } from '../scene/SolarScene';
 import { ModelStore } from '../stores/modelStore';
+import { applySharedState, collectSharedState, decodeSharedState, encodeSharedState } from '../stores/share';
 import { TimeStore } from '../stores/timeStore';
 import { ViewStore, type ViewMode } from '../stores/viewStore';
 import { EclipsePanel } from '../ui/EclipsePanel';
@@ -29,6 +30,10 @@ export class App {
       <header class="topbar">
         <h1>Solar System Lab <span class="sub">3D 태양계 &amp; 지구과학 실험실</span></h1>
         <p class="top-desc">공전·자전·계절·달의 위상·일식과 월식을 직접 조작하며 배워요 (초5~중3).</p>
+        <div class="row share-row">
+          <button id="share-btn" type="button">🔗 이 장면 링크 복사</button>
+          <span id="share-msg" class="muted" aria-live="polite"></span>
+        </div>
       </header>
       <nav class="mobile-tabs" aria-label="화면 전환">
         <button type="button" data-tab="scene" class="active" aria-pressed="true">장면</button>
@@ -71,6 +76,11 @@ export class App {
     this.wireToolbar();
     this.wireMobileTabs();
 
+    // Restore a shared scene before anything renders (panels scene read
+    // store state on subscribe, so this must come first).
+    const shared = decodeSharedState(window.location.hash);
+    if (shared) applySharedState(this.time, this.view, this.model, shared);
+
     const canvas = this.root.querySelector<HTMLCanvasElement>('#scene')!;
     const wrap = this.root.querySelector<HTMLElement>('#scene-wrap')!;
     try {
@@ -98,6 +108,7 @@ export class App {
     this.time.subscribe((s) => this.onTime(s.jd));
     this.view.subscribe((v) => this.onView(v.mode));
     this.onView(this.view.get().mode);
+    this.wireSharing();
   }
 
   private wireToolbar(): void {
@@ -168,5 +179,40 @@ export class App {
       badge.hidden = true;
     }
     this.scene?.setEclipseHighlight(st.solar, st.lunar);
+  }
+
+  /** URL 공유: 해시 복원·자동 반영·링크 복사. */
+  private wireSharing(): void {
+    const msg = this.root.querySelector('#share-msg') as HTMLElement;
+    const syncHash = (): void => {
+      const hash = encodeSharedState(collectSharedState(this.time, this.view, this.model));
+      if (window.location.hash !== hash) {
+        window.history.replaceState(null, '', hash);
+      }
+    };
+    let timer = 0;
+    const schedule = (): void => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(syncHash, 400);
+    };
+    this.time.subscribe(schedule);
+    this.view.subscribe(schedule);
+    this.model.subscribe(schedule);
+    window.addEventListener('hashchange', () => {
+      const shared = decodeSharedState(window.location.hash);
+      if (shared) applySharedState(this.time, this.view, this.model, shared);
+    });
+
+    this.root.querySelector('#share-btn')?.addEventListener('click', async () => {
+      syncHash();
+      window.clearTimeout(timer);
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        msg.textContent = '링크를 복사했습니다. 수업 자료에 붙여넣으세요.';
+      } catch {
+        msg.textContent = '자동 복사가 안 됩니다. 주소창의 링크를 직접 복사해 주세요.';
+      }
+      window.setTimeout(() => { msg.textContent = ''; }, 4000);
+    });
   }
 }

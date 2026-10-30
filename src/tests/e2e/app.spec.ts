@@ -84,6 +84,18 @@ test('observer button does not move the page scroll', async ({ page }) => {
   await expect(page.locator('#ui-observer .card')).toHaveClass(/highlight|card/);
 });
 
+test('shared link restores date and tilt', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#tp-input').fill('2026-08-12');
+  await page.locator('#tilt-slider').fill('30');
+  await page.waitForTimeout(700); // debounce flush
+  const url = page.url();
+  expect(url).toContain('#s=');
+  await page.goto(url);
+  await expect(page.locator('#tp-date')).toContainText('2026-08-12');
+  await expect(page.locator('#gr-tilt-val')).toContainText('30');
+});
+
 test('no console errors or page errors on load and interaction', async ({ page }) => {
   const errors: string[] = [];
   page.on('console', (msg) => {
